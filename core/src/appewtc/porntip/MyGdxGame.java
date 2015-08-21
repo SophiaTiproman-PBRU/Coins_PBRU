@@ -25,7 +25,7 @@ public class MyGdxGame extends ApplicationAdapter {
 	//	private Texture img;
 	private Texture wallpaperTexture, cloudTexture, objTexture, coinsTexture;
 	private OrthographicCamera objOrthographicCamera;
-	private BitmapFont nameBitmapFont;
+	private BitmapFont nameBitmapFont, scoreBitmapFont;	//variables for display text
 	private int xCloudAnInt, yCloudAnInt = 600;
 	private boolean cloudABoolean = true;
 	private Rectangle objRectangle, coinsRectangle;
@@ -34,6 +34,7 @@ public class MyGdxGame extends ApplicationAdapter {
 	private Array<Rectangle> coinsArray;
 	private long lastDropCoins;
 	private Iterator<Rectangle> coinsIterator;	// >> Java.util
+	private int scoreAnInt = 0;
 
 	
 	@Override
@@ -67,7 +68,7 @@ public class MyGdxGame extends ApplicationAdapter {
 		objRectangle.height = 64;
 
 		//Setup object Sound
-//		objSound = Gdx.audio.newSound(Gdx.files.internal("bird.wav"));
+		objSound = Gdx.audio.newSound(Gdx.files.internal("mosquito.wav"));
 
 		//Setup coins
 		coinsTexture = new Texture("coins.png");
@@ -82,7 +83,12 @@ public class MyGdxGame extends ApplicationAdapter {
 		//Setup Coins Drop Sound
 		coinsDropSound = Gdx.audio.newSound(Gdx.files.internal("coins_drop.wav"));
 
-	}	//create  เอาไว้กำหนดค่า
+		//Setup scoreBitMapFont
+		scoreBitmapFont = new BitmapFont();
+		scoreBitmapFont.setColor(Color.CYAN);
+		scoreBitmapFont.setScale(4);
+
+	}	//create  >> for setup ot initial
 
 	private void coinsRandomDrop() {
 
@@ -124,8 +130,10 @@ public class MyGdxGame extends ApplicationAdapter {
 		//Drawable Coins
 		for (Rectangle forCoins : coinsArray) {
 			batch.draw(coinsTexture, forCoins.x, forCoins.y);
-
 		}
+
+		//Drawable Score
+		scoreBitmapFont.draw(batch, "Score = " + Integer.toString(scoreAnInt), 800, 750);
 
 		batch.end();
 
@@ -159,6 +167,7 @@ public class MyGdxGame extends ApplicationAdapter {
 			if (myCoinsRectangle.overlaps(objRectangle)) {
 				coinsDropSound.play();
 				coinsIterator.remove();
+				scoreAnInt++;
 			}
 
 		} 	//while
