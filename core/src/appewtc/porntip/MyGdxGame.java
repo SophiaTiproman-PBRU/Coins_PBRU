@@ -68,7 +68,7 @@ public class MyGdxGame extends ApplicationAdapter {
 		objRectangle.height = 64;
 
 		//Setup object Sound
-		objSound = Gdx.audio.newSound(Gdx.files.internal("mosquito.wav"));
+	//	objSound = Gdx.audio.newSound(Gdx.files.internal("mosquito.wav"));
 
 		//Setup coins
 		coinsTexture = new Texture("coins.png");
@@ -177,7 +177,7 @@ public class MyGdxGame extends ApplicationAdapter {
 	private void activeTouchScreen() {
 		if (Gdx.input.isTouched()) {
 			//Sound Effect
-			objSound.play();
+		//	objSound.play();
 
 			objVector3 = new Vector3();
 			objVector3.set(Gdx.input.getX(), Gdx.input.getY(), 0);
