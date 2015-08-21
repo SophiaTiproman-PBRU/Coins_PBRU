@@ -30,7 +30,7 @@ public class MyGdxGame extends ApplicationAdapter {
 	private boolean cloudABoolean = true;
 	private Rectangle objRectangle, coinsRectangle;
 	private Vector3 objVector3;
-	private Sound objSound;
+	private Sound objSound, waterDropSound, coinsDropSound;
 	private Array<Rectangle> coinsArray;
 	private long lastDropCoins;
 	private Iterator<Rectangle> coinsIterator;	// >> Java.util
@@ -67,7 +67,7 @@ public class MyGdxGame extends ApplicationAdapter {
 		objRectangle.height = 64;
 
 		//Setup object Sound
-		objSound = Gdx.audio.newSound(Gdx.files.internal("coins_drop.wav"));
+//		objSound = Gdx.audio.newSound(Gdx.files.internal("bird.wav"));
 
 		//Setup coins
 		coinsTexture = new Texture("coins.png");
@@ -75,6 +75,12 @@ public class MyGdxGame extends ApplicationAdapter {
 		//Create coinsArray
 		coinsArray = new Array<Rectangle>();
 		coinsRandomDrop();
+
+		//Setup Water Drop Sound
+		waterDropSound = Gdx.audio.newSound(Gdx.files.internal("water_drop.wav"));
+
+		//Setup Coins Drop Sound
+		coinsDropSound = Gdx.audio.newSound(Gdx.files.internal("coins_drop.wav"));
 
 	}	//create  เอาไว้กำหนดค่า
 
@@ -132,8 +138,6 @@ public class MyGdxGame extends ApplicationAdapter {
 		//Random Drop Coins
 		randomDropCoins();
 
-
-
 	}	//render >> it is loop
 
 	private void randomDropCoins() {
@@ -147,11 +151,17 @@ public class MyGdxGame extends ApplicationAdapter {
 
 			//When Coins into Floor >> remove from memory
 			if (myCoinsRectangle.y + 64 < 0) {
+				waterDropSound.play();
+				coinsIterator.remove();  //Deallocate Memory
+			}	//if
+
+			//When Coins Overlap Object
+			if (myCoinsRectangle.overlaps(objRectangle)) {
+				coinsDropSound.play();
 				coinsIterator.remove();
 			}
 
-		}
-
+		} 	//while
 
 	}	//RandomDropCoins
 
