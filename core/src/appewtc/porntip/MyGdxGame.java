@@ -2,6 +2,7 @@ package appewtc.porntip;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -23,19 +24,20 @@ public class MyGdxGame extends ApplicationAdapter {
 	//Explicit
 	private SpriteBatch batch;
 	//	private Texture img;
-	private Texture wallpaperTexture, cloudTexture, objTexture, coinsTexture;
+	private Texture wallpaperTexture, cloudTexture, objTexture, coinsTexture, rainTexture ;
 	private OrthographicCamera objOrthographicCamera;
-	private BitmapFont nameBitmapFont, scoreBitmapFont;	//variables for display text
+	private BitmapFont nameBitmapFont, scoreBitmapFont, showScoreBitmapFont;	//variables for display text
 	private int xCloudAnInt, yCloudAnInt = 600;
-	private boolean cloudABoolean = true;
-	private Rectangle objRectangle, coinsRectangle;
+	private boolean cloudABoolean = true, finishABoolean = false;
+	private Rectangle objRectangle, coinsRectangle, rainRectangle;
 	private Vector3 objVector3;
 	private Sound objSound, waterDropSound, coinsDropSound;
-	private Array<Rectangle> coinsArray;
-	private long lastDropCoins;
-	private Iterator<Rectangle> coinsIterator;	// >> Java.util
-	private int scoreAnInt = 0;
-
+	private Array<Rectangle> coinsArray, rainArray;
+	private long lastDropCoins, lastDropRain;
+	private Iterator<Rectangle> coinsIterator, rainIterator;	// >> Java.util
+	private int scoreAnInt = 0, falseAnInt = 0, finalScoreAnInt;  //automatic set to zero
+	private Music rainMusic;
+	private Music backgroundMusic;
 	
 	@Override
 	public void create () {
@@ -88,7 +90,38 @@ public class MyGdxGame extends ApplicationAdapter {
 		scoreBitmapFont.setColor(Color.CYAN);
 		scoreBitmapFont.setScale(4);
 
+		//Setup showScoreBitMapFont
+		showScoreBitmapFont = new BitmapFont();
+		//showScoreBitmapFont.setColor(Color.GREEN);
+		showScoreBitmapFont.setColor(230,28,223,255);
+		showScoreBitmapFont.setScale(4);
+
+		 //Setup rainTexture
+		rainTexture = new Texture("droplet.png");
+
+		//Create rainArray
+		rainArray = new Array<Rectangle>();
+		rainRandomDrop();
+
+		//Setup rainMusic
+		rainMusic = Gdx.audio.newMusic(Gdx.files.internal("rain.mp3"));
+
+		//Setup backgroundMusic
+		backgroundMusic = Gdx.audio.newMusic(Gdx.files.internal("bggame.mp3"));
+
 	}	//create  >> for setup ot initial
+
+	private void rainRandomDrop() {
+		rainRectangle = new Rectangle();
+		rainRectangle.x = MathUtils.random(0, 1136);
+		rainRectangle.y = 800;
+		rainRectangle.width = 64;
+		rainRectangle.height = 64;
+
+		rainArray.add(rainRectangle);
+		lastDropRain = TimeUtils.nanoTime();
+
+	}
 
 	private void coinsRandomDrop() {
 
@@ -130,10 +163,25 @@ public class MyGdxGame extends ApplicationAdapter {
 		//Drawable Coins
 		for (Rectangle forCoins : coinsArray) {
 			batch.draw(coinsTexture, forCoins.x, forCoins.y);
-		}
+		}	//for
 
 		//Drawable Score
 		scoreBitmapFont.draw(batch, "Score = " + Integer.toString(scoreAnInt), 800, 750);
+
+		//Drawable Rain
+		for (Rectangle forRain : rainArray) {
+			batch.draw(rainTexture, forRain.x, forRain.y);
+		}	//for
+
+
+		if (finishABoolean) {
+
+			batch.draw(wallpaperTexture, 0, 0);
+
+			showScoreBitmapFont.draw(batch, "Your Score = " + Integer.toString(finalScoreAnInt), 500, 750);
+
+		}
+
 
 		batch.end();
 
@@ -146,33 +194,99 @@ public class MyGdxGame extends ApplicationAdapter {
 		//Random Drop Coins
 		randomDropCoins();
 
+		//Random Drop Rain
+		randomDropRain();
+
+		//Play rainMusic
+		rainMusic.play();
+
+		//Play background
+		backgroundMusic.play();
+
 	}	//render >> it is loop
+
+	private void randomDropRain() {
+		if (TimeUtils.nanoTime() - lastDropRain > 1E9) {
+			rainRandomDrop();
+		} 	//if
+		rainIterator = rainArray.iterator();
+		while (rainIterator.hasNext()) {
+			Rectangle myrainRectangle = rainIterator.next();
+			myrainRectangle.y -= 50 * Gdx.graphics.getDeltaTime();
+
+			//When Rain drop into floor
+			if (myrainRectangle.y + 64 < 0) {
+				waterDropSound.play();
+				rainIterator.remove();	//Deallocate Memory
+			}	//if
+
+			//When Rain overlap Object
+			if (myrainRectangle.overlaps(objRectangle)) {
+				scoreAnInt--;
+				waterDropSound.play();
+				rainIterator.remove();	//Deallocate Memory
+			}
+
+
+		}	//while
+	}	//randomDropRain
 
 	private void randomDropCoins() {
 		if (TimeUtils.nanoTime() - lastDropCoins > 1E9) {
 			coinsRandomDrop();
-		}
+		} 	//if
+
 		coinsIterator = coinsArray.iterator();
+
 		while (coinsIterator.hasNext()) {
 			Rectangle myCoinsRectangle = coinsIterator.next();
 			myCoinsRectangle.y -= 50 * Gdx.graphics.getDeltaTime();
 
 			//When Coins into Floor >> remove from memory
 			if (myCoinsRectangle.y + 64 < 0) {
+				falseAnInt++;
 				waterDropSound.play();
 				coinsIterator.remove();  //Deallocate Memory
+				checkFalse();
+
 			}	//if
 
 			//When Coins Overlap Object
 			if (myCoinsRectangle.overlaps(objRectangle)) {
 				coinsDropSound.play();
 				coinsIterator.remove();
-				scoreAnInt++;
-			}
+				scoreAnInt += 2;
+			}	//if
+
 
 		} 	//while
 
 	}	//RandomDropCoins
+
+	private void checkFalse() {
+		if (falseAnInt > 100) {
+			dispose();
+
+			if (!finishABoolean) {
+				finalScoreAnInt = scoreAnInt;
+			}
+
+			finishABoolean = true;
+
+		}	//if
+	}	//checkFalse
+
+	@Override
+	public void dispose() {
+		super.dispose();
+
+		backgroundMusic.dispose();
+		rainMusic.dispose();
+	//	objSound.dispose();
+		waterDropSound.dispose();
+		coinsDropSound.dispose();
+
+	}	//dispose
 
 	private void activeTouchScreen() {
 		if (Gdx.input.isTouched()) {
@@ -197,7 +311,6 @@ public class MyGdxGame extends ApplicationAdapter {
 				}
 			}
 		}    //if
-
 	}
 
 	private void moveCloud() {
