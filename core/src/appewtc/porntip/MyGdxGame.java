@@ -9,9 +9,13 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.TimeUtils;
 
+import java.util.Iterator;
 import java.util.SortedMap;
 
 public class MyGdxGame extends ApplicationAdapter {
@@ -19,14 +23,17 @@ public class MyGdxGame extends ApplicationAdapter {
 	//Explicit
 	private SpriteBatch batch;
 	//	private Texture img;
-	private Texture wallpaperTexture, cloudTexture, objTexture;
+	private Texture wallpaperTexture, cloudTexture, objTexture, coinsTexture;
 	private OrthographicCamera objOrthographicCamera;
 	private BitmapFont nameBitmapFont;
 	private int xCloudAnInt, yCloudAnInt = 600;
 	private boolean cloudABoolean = true;
-	private Rectangle objRectangle;
+	private Rectangle objRectangle, coinsRectangle;
 	private Vector3 objVector3;
 	private Sound objSound;
+	private Array<Rectangle> coinsArray;
+	private long lastDropCoins;
+	private Iterator<Rectangle> coinsIterator;	// >> Java.util
 
 	
 	@Override
@@ -49,21 +56,39 @@ public class MyGdxGame extends ApplicationAdapter {
 		//Setup Cloud
 		cloudTexture = new Texture("cloud.png");
 
-		//setup pig
-		objTexture = new Texture("coins.png");
+		//setup object
+		objTexture = new Texture("bucket.png");
 
-		//Setup Rectangle Pig
+		//Setup Rectangle object
 		objRectangle = new Rectangle();
 		objRectangle.x = 568;
 		objRectangle.y = 100;
 		objRectangle.width = 64;
 		objRectangle.height = 64;
 
-		//Setup Sound
+		//Setup object Sound
 		objSound = Gdx.audio.newSound(Gdx.files.internal("coins_drop.wav"));
 
+		//Setup coins
+		coinsTexture = new Texture("coins.png");
+
+		//Create coinsArray
+		coinsArray = new Array<Rectangle>();
+		coinsRandomDrop();
 
 	}	//create  เอาไว้กำหนดค่า
+
+	private void coinsRandomDrop() {
+
+		coinsRectangle = new Rectangle();
+		coinsRectangle.x = MathUtils.random(0, 1136);	//1200-64 = 1136
+		coinsRectangle.y = 800; // drop from the top
+		coinsRectangle.width = 64;
+		coinsRectangle.height = 64;
+		coinsArray.add(coinsRectangle);
+		lastDropCoins = TimeUtils.nanoTime();	//don't drop from the same position
+
+	}	//coinRandomDrop
 
 	@Override
 	public void render () {
@@ -90,6 +115,12 @@ public class MyGdxGame extends ApplicationAdapter {
 		//Drawable object >> picture
 		batch.draw(objTexture, objRectangle.x, objRectangle.y);
 
+		//Drawable Coins
+		for (Rectangle forCoins : coinsArray) {
+			batch.draw(coinsTexture, forCoins.x, forCoins.y);
+
+		}
+
 		batch.end();
 
 		//Move Cloud
@@ -98,7 +129,31 @@ public class MyGdxGame extends ApplicationAdapter {
 		//Active When Touch Screen
 		activeTouchScreen();
 
+		//Random Drop Coins
+		randomDropCoins();
+
+
+
 	}	//render >> it is loop
+
+	private void randomDropCoins() {
+		if (TimeUtils.nanoTime() - lastDropCoins > 1E9) {
+			coinsRandomDrop();
+		}
+		coinsIterator = coinsArray.iterator();
+		while (coinsIterator.hasNext()) {
+			Rectangle myCoinsRectangle = coinsIterator.next();
+			myCoinsRectangle.y -= 50 * Gdx.graphics.getDeltaTime();
+
+			//When Coins into Floor >> remove from memory
+			if (myCoinsRectangle.y + 64 < 0) {
+				coinsIterator.remove();
+			}
+
+		}
+
+
+	}	//RandomDropCoins
 
 	private void activeTouchScreen() {
 		if (Gdx.input.isTouched()) {
@@ -108,7 +163,8 @@ public class MyGdxGame extends ApplicationAdapter {
 			objVector3 = new Vector3();
 			objVector3.set(Gdx.input.getX(), Gdx.input.getY(), 0);
 
-			if (objVector3.x < 600) {
+			//Gdx.graphics.getWidth()/2 >> 600
+			if (objVector3.x < Gdx.graphics.getWidth()/2) {
 				if (objRectangle.x < 0) {
 					objRectangle.x = 0;
 				} else {
